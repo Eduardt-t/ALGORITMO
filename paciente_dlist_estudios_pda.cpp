@@ -4,7 +4,7 @@
 #include <vector>
 #include <queue>
 #include <unordered_set>
-#include <cmath>  // Para std::fabs
+#include <cmath>  
 
 struct Paciente {
     std::string nombre;
@@ -14,13 +14,12 @@ struct Paciente {
     double imc;
     double a1c;
 
-    // Calcula el IMC del paciente basado en el peso y altura
+
     void calcularIMC() {
         imc = peso / (altura * altura);
     }
 };
 
-// Comparador para priorizar pacientes en la cola
 struct CompararPrioridad {
     bool operator()(const Paciente& p1, const Paciente& p2) {
         if (p1.a1c == p2.a1c) {
@@ -44,7 +43,7 @@ void cargarPacientes(const std::string& nombreArchivo) {
     }
 
     std::string linea;
-    std::getline(archivo, linea);  // Leer la primera línea (encabezado)
+    std::getline(archivo, linea);  
 
     std::unordered_set<std::string> nombresUnicos;  // Para evitar duplicados
 
@@ -59,7 +58,7 @@ void cargarPacientes(const std::string& nombreArchivo) {
         std::getline(ss, a1cStr, ',');
 
         if (nombresUnicos.find(nombre) != nombresUnicos.end()) {
-            continue;  // Saltar si el nombre ya está en el conjunto
+            continue;  
         }
 
         Paciente paciente;
@@ -181,7 +180,7 @@ void calcularAtencionDiaria() {
 
     int totalPersonasPorDia = personasPorGrupo * gruposPorDia;
     int totalPacientes = colaPacientes.size();
-    int diasParaAtender = (totalPacientes + totalPersonasPorDia - 1) / totalPersonasPorDia;  // Redondeo hacia arriba
+    int diasParaAtender = (totalPacientes + totalPersonasPorDia - 1) / totalPersonasPorDia;  
 
     std::cout << "Total de personas atendidas en un día: " << totalPersonasPorDia << std::endl;
     std::cout << "Días para atender a todos los pacientes: " << diasParaAtender << std::endl;
