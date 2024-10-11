@@ -1,0 +1,126 @@
+#include <iostream>
+#include <fstream>
+#include <limits.h>
+
+#define INF INT_MAX
+
+using namespace std;
+
+void imprimir_vector_caracter(char* vec, const char* nombre) {
+    cout << nombre << "[0]: " << vec[0] << " ";
+    for (int i = 1; i < 5; i++) {
+        cout << nombre << "[" << i << "]: " << vec[i] << " ";
+    }
+    cout << endl;
+}
+
+void imprimir_vector_int(int* vec, const char* nombre) {
+    cout << nombre << "[0]: " << vec[0] << " ";
+    for (int i = 1; i < 5; i++) {
+        cout << nombre << "[" << i << "]: " << vec[i] << " ";
+    }
+    cout << endl;
+}
+
+void aplicar_dijkstra(char* S, char* VS, char* vertices, int* D, int pesos[5][5]) {
+    ofstream archivo_dot;
+    archivo_dot.open("grafo.dot");
+
+    archivo_dot << "digraph G {\n";
+    archivo_dot << "  bgcolor=\"gray\";\n"; // Fondo gris
+    archivo_dot << "  node [style=filled, fillcolor=\"yellow\"];\n"; // Nodos amarillos
+
+    // Estado inicial
+    cout << "---------Estados iniciales ---------------------------------------" << endl;
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            if (pesos[i][j] == INF) {
+                cout << "INF ";
+            } else {
+                cout << pesos[i][j] << " ";
+            }
+        }
+        cout << endl;
+    }
+
+    cout << endl;
+
+    imprimir_vector_caracter(S, "S");
+    imprimir_vector_caracter(VS, "VS");
+    imprimir_vector_int(D, "D");
+
+    cout << "------------------------------------------------------------------" << endl;
+
+    for (int k = 0; k < 5; k++) {
+        cout << "\n> elige vertice menor en VS[] según valores en D[]" << endl;
+        int min_valor = INF;
+        int min_indice = -1;
+        for (int i = 0; i < 5; i++) {
+            if (VS[i] != '\0' && D[i] < min_valor) {
+                min_valor = D[i];
+                min_indice = i;
+            }
+        }
+
+        if (min_indice == -1) break;
+
+        cout << "vertice: " << VS[min_indice] << endl;
+
+        S[min_indice] = VS[min_indice];
+        VS[min_indice] = '\0';
+
+        imprimir_vector_caracter(S, "S");
+        imprimir_vector_caracter(VS, "VS");
+
+        // Actualizar pesos en D
+        for (int i = 0; i < 5; i++) {
+            if (VS[i] != '\0' && pesos[min_indice][i] != INF) {
+                if (D[min_indice] + pesos[min_indice][i] < D[i]) {
+                    D[i] = D[min_indice] + pesos[min_indice][i];
+                }
+            }
+        }
+
+        imprimir_vector_int(D, "D");
+
+        // Generar el grafo en formato DOT
+        for (int i = 0; i < 5; i++) {
+            if (pesos[min_indice][i] != INF) {
+                archivo_dot << "  " << vertices[min_indice] << " -> " << vertices[i] 
+                            << " [label=\"" << pesos[min_indice][i] << "\"];" << endl;
+            }
+        }
+    }
+
+    archivo_dot << "}\n";
+    archivo_dot.close();
+
+    // Ejecutar el comando para convertir el archivo DOT a PNG
+    system("dot -Tpng grafo.dot -o grafo.png");
+    cout << "Grafo generado en 'grafo.png'" << endl;
+}
+
+int main() {
+    // Definición de los vértices
+    char vertices[] = {'a', 'b', 'c', 'd', 'e'};
+
+    // Inicialización de los conjuntos S y VS
+    char S[] = {'\0', '\0', '\0', '\0', '\0'};
+    char VS[] = {'b', 'c', 'd', 'e', '\0'};
+
+    // Definición de las distancias iniciales
+    int D[] = {0, 4, 11, INF, INF};
+
+    // Matriz de pesos (INF representa que no hay conexión)
+    int pesos[5][5] = {
+        {0, 4, 11, INF, INF},
+        {INF, 0, INF, 6, 2},
+        {INF, 3, 0, 6, INF},
+        {INF, INF, INF, 0, INF},
+        {INF, INF, 5, 3, 0}
+    };
+
+    aplicar_dijkstra(S, VS, vertices, D, pesos);
+
+    return 0;
+}
