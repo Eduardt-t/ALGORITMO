@@ -1,126 +1,175 @@
 #include <iostream>
 #include <fstream>
-#include <limits.h>
-
-#define INF INT_MAX
+#include <sstream>
+#include <vector>
+#include <limits>
 
 using namespace std;
 
-void imprimir_vector_caracter(char* vec, const char* nombre) {
-    cout << nombre << "[0]: " << vec[0] << " ";
-    for (int i = 1; i < 5; i++) {
-        cout << nombre << "[" << i << "]: " << vec[i] << " ";
+// declaración de funciones que se utilizarán en el programa.
+void inicializar_matriz_enteros(vector<vector<int>>& matriz, int n);
+void imprimir_matriz(const vector<vector<int>>& matriz, int n);
+void aplicar_dijkstra(const vector<char>& V, const vector<vector<int>>& M, int n, int origen);
+int elegir_vertice(const vector<int>& D, const vector<bool>& visitados, int n);
+void imprimir_grafo(const vector<vector<int>>& matriz, const vector<char>& vector, int n);
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        cout << "Uso: ./dijkstra archivo_entrada.txt" << endl;
+        return -1;
     }
-    cout << endl;
+
+    ifstream archivo(argv[1]);
+    if (!archivo.is_open()) {
+        cout << "No se pudo abrir el archivo de entrada." << endl;
+        return -1;
+    }
+
+    // Leer el número de vértices
+    int N;
+    archivo >> N;
+
+    if (N <= 2) {
+        cout << "El número de vértices debe ser mayor a 2." << endl;
+        return -1;
+    }
+
+    // Crear e inicializar el vector de nodos
+    vector<char> V(N);
+    for (int i = 0; i < N; ++i) {
+        archivo >> V[i];
+    }
+
+    // Crear e inicializar la matriz de adyacencia
+    vector<vector<int>> M(N, vector<int>(N));
+    inicializar_matriz_enteros(M, N);
+
+    // Leer la matriz de adyacencia desde el archivo
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            archivo >> M[i][j];
+        }
+    }
+
+    archivo.close();
+
+    imprimir_matriz(M, N);
+
+    // Seleccionar el nodo origen
+    char origen;
+    cout << "Ingrese el nodo origen: ";
+    cin >> origen;
+
+    int indice_origen = -1;
+    for (int i = 0; i < N; i++) {
+        if (V[i] == origen) {
+            indice_origen = i;
+            break;
+        }
+    }
+
+    if (indice_origen == -1) {
+        cout << "Vértice origen no válido." << endl;
+        return -1;
+    }
+
+    // Ejecutar Dijkstra
+    aplicar_dijkstra(V, M, N, indice_origen);
+
+    // Generar el archivo de grafo
+    imprimir_grafo(M, V, N);
+
+    return 0;
 }
 
-void imprimir_vector_int(int* vec, const char* nombre) {
-    cout << nombre << "[0]: " << vec[0] << " ";
-    for (int i = 1; i < 5; i++) {
-        cout << nombre << "[" << i << "]: " << vec[i] << " ";
+// Inicializar la matriz de enteros con -1 (indicando que no hay conexión)
+void inicializar_matriz_enteros(vector<vector<int>>& matriz, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            matriz[i][j] = -1;
+        }
     }
-    cout << endl;
 }
 
-void aplicar_dijkstra(char* S, char* VS, char* vertices, int* D, int pesos[5][5]) {
-    ofstream archivo_dot;
-    archivo_dot.open("grafo.dot");
-
-    archivo_dot << "digraph G {\n";
-    archivo_dot << "  bgcolor=\"gray\";\n"; // Fondo gris
-    archivo_dot << "  node [style=filled, fillcolor=\"yellow\"];\n"; // Nodos amarillos
-
-    // Estado inicial
-    cout << "---------Estados iniciales ---------------------------------------" << endl;
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 5; j++) {
-            if (pesos[i][j] == INF) {
-                cout << "INF ";
-            } else {
-                cout << pesos[i][j] << " ";
-            }
+// Imprimir la matriz de adyacencia
+void imprimir_matriz(const vector<vector<int>>& matriz, int n) {
+    cout << "Matriz de adyacencia:" << endl;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (matriz[i][j] == -1)
+                cout << "Inf "; // Inf para conexiones inexistentes
+            else
+                cout << matriz[i][j] << " ";
         }
         cout << endl;
     }
+}
 
-    cout << endl;
+// Algoritmo de Dijkstra mejorado con seguimiento de caminos
+void aplicar_dijkstra(const vector<char>& V, const vector<vector<int>>& M, int n, int origen) {
+    vector<int> D(n, numeric_limits<int>::max()); // Distancia mínima
+    vector<int> predecesor(n, -1); // Seguimiento de caminos
+    vector<bool> visitados(n, false);
 
-    imprimir_vector_caracter(S, "S");
-    imprimir_vector_caracter(VS, "VS");
-    imprimir_vector_int(D, "D");
+    D[origen] = 0;
 
-    cout << "------------------------------------------------------------------" << endl;
+    for (int i = 0; i < n - 1; i++) {
+        int u = elegir_vertice(D, visitados, n);
+        if (u == -1) break; // No quedan vértices accesibles
 
-    for (int k = 0; k < 5; k++) {
-        cout << "\n> elige vertice menor en VS[] según valores en D[]" << endl;
-        int min_valor = INF;
-        int min_indice = -1;
-        for (int i = 0; i < 5; i++) {
-            if (VS[i] != '\0' && D[i] < min_valor) {
-                min_valor = D[i];
-                min_indice = i;
-            }
-        }
+        visitados[u] = true;
 
-        if (min_indice == -1) break;
-
-        cout << "vertice: " << VS[min_indice] << endl;
-
-        S[min_indice] = VS[min_indice];
-        VS[min_indice] = '\0';
-
-        imprimir_vector_caracter(S, "S");
-        imprimir_vector_caracter(VS, "VS");
-
-        // Actualizar pesos en D
-        for (int i = 0; i < 5; i++) {
-            if (VS[i] != '\0' && pesos[min_indice][i] != INF) {
-                if (D[min_indice] + pesos[min_indice][i] < D[i]) {
-                    D[i] = D[min_indice] + pesos[min_indice][i];
-                }
-            }
-        }
-
-        imprimir_vector_int(D, "D");
-
-        // Generar el grafo en formato DOT
-        for (int i = 0; i < 5; i++) {
-            if (pesos[min_indice][i] != INF) {
-                archivo_dot << "  " << vertices[min_indice] << " -> " << vertices[i] 
-                            << " [label=\"" << pesos[min_indice][i] << "\"];" << endl;
+        for (int v = 0; v < n; v++) {
+            if (!visitados[v] && M[u][v] != -1 && D[u] != numeric_limits<int>::max() && D[u] + M[u][v] < D[v]) {
+                D[v] = D[u] + M[u][v];
+                predecesor[v] = u;
             }
         }
     }
 
-    archivo_dot << "}\n";
-    archivo_dot.close();
-
-    // Ejecutar el comando para convertir el archivo DOT a PNG
-    system("dot -Tpng grafo.dot -o grafo.png");
-    cout << "Grafo generado en 'grafo.png'" << endl;
+    cout << "Distancias mínimas desde " << V[origen] << ":" << endl;
+    for (int i = 0; i < n; i++) {
+        if (D[i] == numeric_limits<int>::max()) {
+            cout << "Hasta " << V[i] << ": Inf (no alcanzable)" << endl;
+        } else {
+            cout << "Hasta " << V[i] << ": " << D[i] << " (camino: " << V[i];
+            int p = predecesor[i];
+            while (p != -1) {
+                cout << " <- " << V[p];
+                p = predecesor[p];
+            }
+            cout << ")" << endl;
+        }
+    }
 }
 
-int main() {
-    // Definición de los vértices
-    char vertices[] = {'a', 'b', 'c', 'd', 'e'};
+// Elegir el vértice con la menor distancia no visitado
+int elegir_vertice(const vector<int>& D, const vector<bool>& visitados, int n) {
+    int min = numeric_limits<int>::max();
+    int min_indice = -1;
 
-    // Inicialización de los conjuntos S y VS
-    char S[] = {'\0', '\0', '\0', '\0', '\0'};
-    char VS[] = {'b', 'c', 'd', 'e', '\0'};
+    for (int i = 0; i < n; i++) {
+        if (!visitados[i] && D[i] < min) {
+            min = D[i];
+            min_indice = i;
+        }
+    }
 
-    // Definición de las distancias iniciales
-    int D[] = {0, 4, 11, INF, INF};
+    return min_indice;
+}
 
-    // Matriz de pesos (INF representa que no hay conexión)
-    int pesos[5][5] = {
-        {0, 4, 11, INF, INF},
-        {INF, 0, INF, 6, 2},
-        {INF, 3, 0, 6, INF},
-        {INF, INF, INF, 0, INF},
-        {INF, INF, 5, 3, 0}
-    };
-
-    aplicar_dijkstra(S, VS, vertices, D, pesos);
-
-    return 0;
+// Generar archivo DOT para graficar el grafo
+void imprimir_grafo(const vector<vector<int>>& matriz, const vector<char>& vector, int n) {
+    ofstream archivo("grafo.dot");
+    archivo << "digraph G {" << endl;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (matriz[i][j] != -1 && matriz[i][j] != 0) {
+                archivo << vector[i] << " -> " << vector[j] << " [label=\"" << matriz[i][j] << "\"];" << endl;
+            }
+        }
+    }
+    archivo << "}" << endl;
+    archivo.close();
+    cout << "Archivo grafo.dot generado correctamente." << endl;
 }
