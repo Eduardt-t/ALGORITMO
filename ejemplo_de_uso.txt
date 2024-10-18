@@ -1,0 +1,9 @@
+ejemplo de uso:
+Ingrese el número de nodos (N): 5
+Ingrese el número de aristas: 4
+Ingrese las aristas (u v peso):
+3 2 4
+1 3 3
+3 4 2
+4 5 1
+
